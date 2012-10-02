@@ -167,10 +167,10 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'label' => 'Anwendungspasswort',
             'required' => true
         ));
-        $form->setElement('text', 'ipaymentAdminPassword', array(
-            'label' => 'Adminaktionspasswort',
-            'required' => true
-        ));
+        //$form->setElement('text', 'ipaymentAdminPassword', array(
+        //    'label' => 'Adminaktionspasswort',
+        //    'required' => true
+        //));
         $form->setElement('text', 'ipaymentSecurityKey', array(
             'label' => 'Sicherheitsschlüssel',
             'required' => false

@@ -68,9 +68,9 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         $uniqueId = $this->createPaymentUniqueId();
 
         $params = array(
-            'trxuser_id' => !$test ? $config->get('ipaymentAppId') : '99998',
-            'trxpassword' => !$test ? $config->get('ipaymentAppPassword') : '0',
-            'adminactionpassword' => !$test ? $config->get('ipaymentAdminPassword') : '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+            'trxuser_id' => $test ? '99998' : $config->get('ipaymentAppId'),
+            'trxpassword' => $test ? '0': $config->get('ipaymentAppPassword'),
+            //'adminactionpassword' => !$test ? $config->get('ipaymentAdminPassword') : '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
             'silent' => 1,
             'trx_paymenttyp' => 'cc',
             'trx_typ' => $config->get('ipaymentPaymentPending') ? 'preauth' : 'auth',
