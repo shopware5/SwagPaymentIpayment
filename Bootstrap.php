@@ -338,7 +338,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
      */
     public function getVersion()
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     /**

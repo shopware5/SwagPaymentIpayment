@@ -133,16 +133,16 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         $url = substr($url, 0, strpos($url, '&ret_url_checksum') + 1);
         $result = $request->getQuery();
 
-        if ($request->get('ret_url_checksum') != md5($url . $secret)) {
-            $this->redirect(array('action' => 'index', 'forceSecure' => true));
-            return;
-        }
-
         $transactionId = $result['ret_trx_number'];
         $paymentUniqueId = $result['sw_unique_id'];
         $paymentStatus = $result['trx_typ'];
         if($this->getAmount() > ($result['trx_amount'] / 100)) {
             $paymentStatus = 'miss'; //Überprüfung notwendig
+        }
+        if ($request->get('ret_url_checksum') != md5($url . $secret)) {
+            $paymentStatus = 'checksum'; //Überprüfung notwendig
+            //$this->redirect(array('action' => 'index', 'forceSecure' => true));
+            //return;
         }
         $this->saveOrder($transactionId, $paymentUniqueId);
         $this->Plugin()->setPaymentStatus($transactionId, $paymentStatus);
