@@ -63,7 +63,7 @@
         </div>
     {/if}
     <div class="personal_settings" style="border-bottom-style: solid; border-bottom-width: 1px;">
-    <h2 class="headingbox_dark largesize">{s name=PaymentRecurring force}Eine vorhandene Zahlungsart wiederverwenden:{/s}</h2>
+    <h2 class="headingbox_dark largesize">{s name=PaymentRecurring}Eine vorhandene Zahlungsart wiederverwenden:{/s}</h2>
     {foreach $recurringPayments as $payment}
         <div>
             <input id="recurring_{$payment.id}" style="margin: 10px 0 10px 55px;" type="radio"
@@ -95,7 +95,7 @@
         </div>
     {/if}
     <div class="personal_settings" style="position: relative; border-bottom-style: solid; border-bottom-width: 1px;">
-        <h2 class="headingbox_dark largesize">{s name=PaymentInput}Bitte führen Sie nun die Zahlung durch:{/s}</h2>
+        <h2 class="headingbox_dark largesize">{s name=PaymentInput}Bitte geben Sie hier Ihre Zahlungsdaten ein:{/s}</h2>
         <div>
             <label for="trx_amount">{s name=PaymentAmountLabel}Bestellsumme:{/s}</label>
             <span id="trx_amount">{$gatewayAmount|currency}</span>
