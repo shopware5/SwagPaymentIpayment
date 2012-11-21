@@ -263,6 +263,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             AND o.status >= 0
             AND a.orderID = o.id
             AND a.swag_ipayment_description IS NOT NULL
+            AND o.ordertime >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
             GROUP BY description
             ORDER BY o.id DESC
         ';
