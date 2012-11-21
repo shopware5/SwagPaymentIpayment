@@ -52,30 +52,57 @@
 
 {* Main content *}
 {block name="frontend_index_content"}
+
+{if $recurringPayments}
+<form action="{url action=recurring forceSecure}" method="POST">
+<div class="grid_20 first register" style="margin:10px 0 10px 20px;width:960px;">
+    {if $recurringError}
+        <div class="error"><strong>{se name=PaymentErrorMessage}Ein Fehler ist aufgetreten.{/se}</strong><br />
+            <span class="code hidden">{$recurringError.errorCode}</span>
+            {$recurringError.errorMessage|escape|nl2br}
+        </div>
+    {/if}
+    <div class="personal_settings" style="border-bottom-style: solid; border-bottom-width: 1px;">
+    <h2 class="headingbox_dark largesize">{s name=PaymentRecurring force}Eine vorhandene Zahlungsart wiederverwenden:{/s}</h2>
+    {foreach $recurringPayments as $payment}
+        <div>
+            <input id="recurring_{$payment.id}" style="margin: 10px 0 10px 55px;" type="radio"
+              name="orderNumber" value="{$payment.orderNumber}" {if $payment@first}checked="checked"{/if}>
+            <label for="recurring_{$payment.id}" style="display: inline; float: none; cursor: pointer">
+                {$payment.description|escape}
+            </label>
+        </div>
+    {/foreach}
+    </div>
+</div>
+<div class="actions" style="margin: 10px 0 10px 20px;display: inline-block;width:960px;">
+    <input type="submit" value="{s name=PaymentSubmitLabel}Zahlung abschließen{/s}" class="button-right large right">
+</div>
+</form>
+{/if}
+
 <form action="{$gatewayUrl}" method="POST">
+<div class="grid_20 first register" style="margin:10px 0 10px 20px;width:960px;">
 {foreach $gatewayParams as $name => $value}
 {if $name != 'addr_name'}
     <input type="hidden" name="{$name}" value="{$value|escape}">
 {/if}
 {/foreach}
-    <div class="grid_20 first register" style="margin:10px 0 10px 20px;width:960px;">
-
     {if $gatewayError}
         <div class="error"><strong>{se name=PaymentErrorMessage}Ein Fehler ist aufgetreten.{/se}</strong><br />
             <span class="code hidden">{$gatewayError.errorCode}</span>
             {$gatewayError.errorMessage|escape|nl2br}
         </div>
     {/if}
-
-    <div class="personal_settings" style="border-bottom-style: solid; border-bottom-width: 1px;">
-        <h2 class="headingbox_dark largesize">{s name=PaymentHeadline}Bitte führen Sie nun die Zahlung durch:{/s}</h2>
+    <div class="personal_settings" style="position: relative; border-bottom-style: solid; border-bottom-width: 1px;">
+        <h2 class="headingbox_dark largesize">{s name=PaymentInput}Bitte führen Sie nun die Zahlung durch:{/s}</h2>
         <div>
             <label for="trx_amount">{s name=PaymentAmountLabel}Bestellsumme:{/s}</label>
             <span id="trx_amount">{$gatewayAmount|currency}</span>
         </div>
         <div>
             <label for="addr_name">{s name=PaymentAdressNameLabel}Kreditkarten-Inhaber:{/s}</label>
-            <input class="text" type="text" value="{$gatewayParams.addr_name}" id="addr_name" name="addr_name">
+            <input class="text" type="text" value="{$gatewayParams.addr_name|escape}" id="addr_name" name="addr_name">
         </div>
         <div>
             <label for="cc_number1">{s name=PaymentCreditCardNumber}Kreditkarten-Nummer:{/s}</label>

@@ -76,11 +76,9 @@ class Shopware_Components_Ipayment_Client extends Zend_Soap_Client
      */
     protected function _preProcessArguments($arguments)
     {
-    	$arguments[0] = array_merge(
-			array(
-				'accountData' => $this->accountData
-			),
-			(array) $arguments[0]
+    	$arguments = array_merge(
+            array($this->accountData),
+            $arguments
 		);
         return $arguments;
     }

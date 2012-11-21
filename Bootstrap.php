@@ -52,6 +52,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
         $this->createMyEvents();
         $this->createMyPayment();
         $this->createMyForm();
+        $this->createMyAttributes();
         return true;
     }
 
@@ -60,6 +61,16 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
      */
     public function uninstall()
     {
+        try {
+            $this->Application()->Models()->removeAttribute(
+                's_order_attributes',
+                'swag_ipayment',
+                'description'
+            );
+        } catch(Exception $e) { }
+        $this->Application()->Models()->generateAttributeModels(array(
+            's_order_attributes'
+        ));
         return true;
     }
 
@@ -69,8 +80,8 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
      */
     public function update($version)
     {
-        //Update form
         $this->createMyForm();
+        $this->createMyAttributes();
         return true;
     }
 
@@ -167,16 +178,21 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'label' => 'Anwendungspasswort',
             'required' => true
         ));
-        //$form->setElement('text', 'ipaymentAdminPassword', array(
-        //    'label' => 'Adminaktionspasswort',
-        //    'required' => true
-        //));
+        $form->setElement('text', 'ipaymentAdminPassword', array(
+            'label' => 'Adminaktionspasswort',
+            'description' => 'Tragen Sie hier Ihr Adminaktionspasswort für sicherere und / oder wiederkehrende Zahlungen ein.',
+            'required' => false
+        ));
         $form->setElement('text', 'ipaymentSecurityKey', array(
-            'label' => 'Sicherheitsschlüssel',
+            'label' => 'Security-Key',
             'required' => false
         ));
         $form->setElement('boolean', 'ipaymentSandbox', array(
             'label' => 'Testmodus aktivieren'
+        ));
+        $form->setElement('boolean', 'ipaymentRecurring', array(
+            'label' => 'Wiederkehrende Zahlungen aktivieren',
+            'description' => 'Achtung: Für diese Funktion müssen Sie den Security-Key deaktivieren und das Feld dafür leer lassen.',
         ));
 
         // Frontend settings
@@ -220,6 +236,23 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
     }
 
     /**
+     * Creates and stores the payment config form.
+     */
+    protected function createMyAttributes()
+    {
+        try {
+            $this->Application()->Models()->addAttribute(
+                's_order_attributes', 'swag_ipayment',
+                'description', 'VARCHAR(255)'
+            );
+        } catch(Exception $e) { }
+
+        $this->Application()->Models()->generateAttributeModels(array(
+            's_order_attributes'
+        ));
+    }
+
+    /**
      *
      */
     protected function registerMyTemplateDir()
@@ -242,7 +275,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'Shopware_Components_Ipayment',
             $this->Path() . 'Components/Ipayment/'
         );
-        return dirname(__FILE__) . '/Controllers/Frontend/Ipayment.php';
+        return $this->Path() . 'Controllers/Frontend/Ipayment.php';
     }
 
     /**
@@ -322,6 +355,26 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
         }
     }
 
+    public function getAccountData()
+    {
+        $config = $this->Config();
+        if($config->get('ipaymentSandbox')) {
+            return array(
+                'accountId' => '99999',
+                'trxuserId' => '99999',
+                'trxpassword' => '0',
+                'adminactionpassword' => '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+            );
+        } else {
+            return array(
+                'accountId' => $config->get('ipaymentAccountId'),
+                'trxuserId' => $config->get('ipaymentAppId'),
+                'trxpassword' => $config->get('ipaymentAppPassword'),
+                'adminactionpassword' => $config->get('ipaymentAdminPassword'),
+            );
+        }
+    }
+
     /**
      *
      * @return array
@@ -338,7 +391,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
      */
     public function getVersion()
     {
-        return '1.0.1';
+        return '1.1.1';
     }
 
     /**
@@ -349,7 +402,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
         return array(
             'version' => $this->getVersion(),
             'label' => $this->getLabel(),
-            'description' => file_get_contents(dirname(__FILE__) . '/info.txt')
+            'description' => file_get_contents($this->Path() . 'info.txt')
         );
     }
 }
