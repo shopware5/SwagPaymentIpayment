@@ -124,12 +124,12 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         $params = array('ipayment_session_id' => $client->createSession(
             $this->Plugin()->getAccountData(),
             $this->getTransactionData(array(
-                'recurringData' => array(
-                    'recurringTyp' => 'initial',
-                    'recurringExpiry' => date('Y/m/d', mktime(0, 0, 0, date('m'), date('d'), date('Y'))),
-                    'recurringFrequency' => 356,
-                    'recurringAllowExpiryCorrection' => true,
-                )
+                //'recurringData' => array(
+                //    'recurringTyp' => 'initial',
+                //    'recurringExpiry' => date('Y/m/d', mktime(0, 0, 0, date('m'), date('d'), date('Y'))),
+                //    'recurringFrequency' => 356,
+                //    'recurringAllowExpiryCorrection' => true,
+                //)
             )),
             $config->get('ipaymentPaymentPending') ? 'preauth' : 'auth',
             'cc', //paymentType
