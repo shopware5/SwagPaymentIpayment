@@ -370,6 +370,9 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             $comment .= " - {$result['paydata_cc_number']}";
         }
         if(!empty($result['paydata_cc_cardowner'])) {
+            if (mb_detect_encoding($result['paydata_cc_cardowner'], 'UTF-8', true) === false) {
+                $result['paydata_cc_cardowner'] = utf8_encode($result['paydata_cc_cardowner']);
+            }
             $comment .= " - {$result['paydata_cc_cardowner']}";
         }
         $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
