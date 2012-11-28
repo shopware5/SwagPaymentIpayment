@@ -67,7 +67,7 @@
     {foreach $recurringPayments as $payment}
         <div>
             <input id="recurring_{$payment.id}" style="margin: 10px 0 10px 55px;" type="radio"
-              name="orderNumber" value="{$payment.orderNumber}" {if $payment@first}checked="checked"{/if}>
+              name="orderId" value="{$payment.orderId}" {if $payment@first}checked="checked"{/if}>
             <label for="recurring_{$payment.id}" style="display: inline; float: none; cursor: pointer">
                 {$payment.description|escape}
             </label>

@@ -35,6 +35,16 @@
  */
 class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Frontend_Payment
 {
+    /**
+     *
+     */
+    public function preDispatch()
+    {
+        if (in_array($this->Request()->getActionName(), array('recurring'))) {
+            $this->Front()->Plugins()->ViewRenderer()->setNoRender();
+        }
+    }
+
 	/**
 	 * Index action method.
 	 * 
@@ -194,19 +204,26 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
      */
     public function recurringAction()
     {
+        if(!$this->getAmount() || $this->getOrderNumber()) {
+            $this->redirect(array(
+                'controller' => 'checkout'
+            ));
+            return;
+        }
+
         $config = $this->Plugin()->Config();
-        $orderNumber = $this->Request()->getParam('orderNumber');
+        $orderId = $this->Request()->getParam('orderId');
 
         $sql = '
             SELECT o.transactionID
             FROM s_order o
             WHERE o.userID = ?
-            AND o.ordernumber = ?
+            AND o.id = ?
             AND o.status >= 0
             ORDER BY o.id DESC
         ';
         $transactionId = Shopware()->Db()->fetchOne($sql, array(
-            Shopware()->Session()->sUserId, $orderNumber
+            Shopware()->Session()->sUserId, $orderId
         ));
 
         $client = $this->Client();
@@ -224,39 +241,39 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             $this->getOptions()
         );
 
-        if ($result->status != 'SUCCESS'){
-            if(!empty($result->errorDetails)) {
-                Shopware()->Session()->IpaymentError = array(
-                    'recurring' => true,
-                    'errorCode' => $result->errorDetails->retErrorcode,
-                    'errorMessage' => $result->errorDetails->retErrorMsg,
-                );
-            }
+        if ($result->status != 'SUCCESS') {
+            Shopware()->Session()->IpaymentError = array(
+                'recurring' => true,
+                'errorCode' => $result->errorDetails->retErrorcode,
+                'errorMessage' => $result->errorDetails->retErrorMsg,
+            );
             $this->redirect(array('action' => 'index', 'forceSecure' => true));
-            return;
+        } else {
+            $transactionId = $result->successDetails->retTrxNumber;
+            $paymentUniqueId = $this->createPaymentUniqueId();
+            $paymentStatus = $config->get('ipaymentPaymentPending') ? 'pre_auth' : 'auth';
+            $paymentStatusId = $this->Plugin()->getPaymentStatusId($paymentStatus);
+
+            $orderNumber = $this->saveOrder($transactionId, $paymentUniqueId, $paymentStatusId);
+            $comment = "{$result->paymentMethod} ({$result->trxPaymentDataCountry})\r\n";
+            $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
+            Shopware()->Db()->query($sql, array($comment, $orderNumber));
+
+            $this->redirect(array(
+                'controller' => 'checkout',
+                'action' => 'finish',
+                'sUniqueID' => $paymentUniqueId
+            ));
         }
-
-        $transactionId = $result->successDetails->retTrxNumber;
-        $paymentUniqueId = $this->createPaymentUniqueId();
-        $paymentStatus = $config->get('ipaymentPaymentPending') ? 'pre_auth' : 'auth';
-        $paymentStatusId = $this->Plugin()->getPaymentStatusId($paymentStatus);
-
-        $orderNumber = $this->saveOrder($transactionId, $paymentUniqueId, $paymentStatusId);
-        $comment = "{$result->paymentMethod} ({$result->trxPaymentDataCountry})\r\n";
-        $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
-        Shopware()->Db()->query($sql, array($comment, $orderNumber));
-
-        $this->redirect(array(
-            'controller' => 'checkout',
-            'action' => 'finish',
-            'sUniqueID' => $paymentUniqueId
-        ));
     }
 
+    /**
+     * @return array
+     */
     public function getRecurringPayments()
     {
         $sql = '
-            SELECT o.id, MAX(o.ordernumber) as orderNumber,
+            SELECT o.id, MAX(o.id) as orderId,
               a.swag_ipayment_description as description
             FROM s_order o, s_order_attributes a
             WHERE o.userID = ?
@@ -316,7 +333,8 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             'gatewaySecureImage' => $config->get('ipaymentSecureImage')
         ));
         if(!empty(Shopware()->Session()->IpaymentError)) {
-            if(!empty(Shopware()->Session()->IpaymentError['recurring'])) {
+            if(!empty(Shopware()->Session()->IpaymentError['recurring'])
+              && !empty($this->View()->recurringPayments)) {
                 $this->View()->assign('recurringError', Shopware()->Session()->IpaymentError);
             } else {
                 $this->View()->assign('gatewayError', Shopware()->Session()->IpaymentError);
