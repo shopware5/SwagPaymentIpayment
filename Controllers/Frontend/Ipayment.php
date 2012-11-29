@@ -242,12 +242,19 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         );
 
         if ($result->status != 'SUCCESS') {
-            Shopware()->Session()->IpaymentError = array(
-                'recurring' => true,
-                'errorCode' => $result->errorDetails->retErrorcode,
-                'errorMessage' => $result->errorDetails->retErrorMsg,
-            );
-            $this->redirect(array('action' => 'index', 'forceSecure' => true));
+            if(!$this->Request()->isXmlHttpRequest()) {
+                Shopware()->Session()->IpaymentError = array(
+                    'recurring' => true,
+                    'errorCode' => $result->errorDetails->retErrorcode,
+                    'errorMessage' => $result->errorDetails->retErrorMsg,
+                );
+                $this->redirect(array('action' => 'index', 'forceSecure' => true));
+            } else {
+                echo Zend_Json::encode(array(
+                    'success' => false,
+                    'message' => "[{$result->errorDetails->retErrorcode}] {$result->errorDetails->retErrorMsg}"
+                ));
+            }
         } else {
             $transactionId = $result->successDetails->retTrxNumber;
             $paymentUniqueId = $this->createPaymentUniqueId();
@@ -259,11 +266,22 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
             Shopware()->Db()->query($sql, array($comment, $orderNumber));
 
-            $this->redirect(array(
-                'controller' => 'checkout',
-                'action' => 'finish',
-                'sUniqueID' => $paymentUniqueId
-            ));
+            if(!$this->Request()->isXmlHttpRequest()) {
+                $this->redirect(array(
+                    'controller' => 'checkout',
+                    'action' => 'finish',
+                    'sUniqueID' => $paymentUniqueId
+                ));
+            } else {
+                echo Zend_Json::encode(array(
+                    'success' => false,
+                    'data' => array(array(
+                        'orderNumber' => $orderNumber,
+                        'transactionId' => $transactionId,
+                        'paymentComment' => $comment
+                    ))
+                ));
+            }
         }
     }
 
