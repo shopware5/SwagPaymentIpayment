@@ -451,11 +451,6 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
 
         $transactionId = $request->getParam('ret_trx_number');
         $paymentStatus = $request->getParam('trx_typ');
-        $paymentUniqueId = $request->getParam('sw_unique_id');
-        $paymentStatusId = $this->Plugin()->getPaymentStatusId($paymentStatus);
-        if ($paymentStatusId == 12 || $paymentStatusId == 18) {
-            $this->saveOrder($transactionId, $paymentUniqueId);
-        }
         $this->Plugin()->setPaymentStatus($transactionId, $paymentStatus);
     }
 
