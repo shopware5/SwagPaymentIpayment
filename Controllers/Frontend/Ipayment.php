@@ -375,11 +375,17 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
 
         $status = $this->Request()->getParam('ret_status');
         if ($status == 'ERROR') {
+            $errorMessage = $request->getParam('ret_errorcode');
+            if (mb_detect_encoding($status, 'UTF-8', true) === false){
+                $errorMessage = utf8_encode($errorMessage);
+            }
+
             Shopware()->Session()->IpaymentError = array(
                 'errorCode' => $request->getParam('ret_errorcode'),
-                'errorMessage' => $request->getParam('ret_errormsg')
-            );
+                'errorMessage' => $errorMessage);
+
             $this->redirect(array('action' => 'index', 'forceSecure' => true));
+
             return;
         }
 
