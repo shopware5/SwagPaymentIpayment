@@ -1,8 +1,9 @@
 {
-    "currentVersion": "1.1.1",
+    "currentVersion": "1.1.2",
 
     "changelogs": {
-        "1.1.1": "removed redundant saveOrder call"
+        "1.1.1": "removed redundant saveOrder call",
+        "1.1.2": "fixed an issue related to UTF8-encoded response messages"
     },
 
     "compatibility": {
