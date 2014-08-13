@@ -1,0 +1,15 @@
+{
+    "currentVersion": "1.1.2",
+
+    "changelogs": {
+        "1.1.1": "removed redundant saveOrder call",
+        "1.1.2": "fixed an issue related to UTF8-encoded response messages"
+    },
+
+    "compatibility": {
+        "minimumVersion": "4.1.0",
+        "maximumVersion": null,
+        "blacklist": [
+        ]
+    }
+}
