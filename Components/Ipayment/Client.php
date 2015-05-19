@@ -1,7 +1,7 @@
 <?php
 /**
- * Shopware 4.0
- * Copyright © 2012 shopware AG
+ * Shopware 5
+ * Copyright (c) shopware AG
  *
  * According to our dual licensing model, this program can be used either
  * under the terms of the GNU Affero General Public License, version 3,
@@ -24,16 +24,11 @@
  * @category   Shopware
  * @package    Shopware_Plugins
  * @subpackage Plugin
- * @copyright  Copyright (c) 2012, shopware AG (http://www.shopware.de)
- * @version    $Id$
- * @author     Heiner Lohaus
- * @author     $Author$
+ * @copyright  Copyright (c) shopware AG (http://www.shopware.de)
  */
 
 /**
- * Shopware Billsafe Client
- * 
- * todo@all: Documentation
+ * Shopware Ipayment Client
  */
 class Shopware_Components_Ipayment_Client extends Zend_Soap_Client
 {
@@ -41,7 +36,7 @@ class Shopware_Components_Ipayment_Client extends Zend_Soap_Client
 
     /**
      * Constructor method
-     * 
+     *
      * Expects a configuration parameter.
      *
      * @param Enlight_Config $config
@@ -49,7 +44,7 @@ class Shopware_Components_Ipayment_Client extends Zend_Soap_Client
     public function __construct($config)
     {
         $wsdl = 'https://ipayment.de/service/3.0/?wsdl';
-        if($config->get('ipaymentSandbox')) {
+        if ($config->get('ipaymentSandbox')) {
             $this->accountData = array(
                 'accountId' => '99999',
                 'trxuserId' => '99998',
@@ -64,22 +59,27 @@ class Shopware_Components_Ipayment_Client extends Zend_Soap_Client
                 'adminactionpassword' => $config->get('ipaymentAdminPassword'),
             );
         }
-        parent::__construct($wsdl, array(
-            'useragent' => 'Shopware ' . Shopware::VERSION
-        ));
+        parent::__construct(
+            $wsdl,
+            array(
+                'useragent' => 'Shopware ' . Shopware::VERSION
+            )
+        );
     }
 
     /**
      * Performs pre processing of all arguments.
      *
      * @param array $arguments
+     * @return array
      */
     protected function _preProcessArguments($arguments)
     {
-    	$arguments = array_merge(
+        $arguments = array_merge(
             array($this->accountData),
             $arguments
-		);
+        );
+
         return $arguments;
     }
 }
