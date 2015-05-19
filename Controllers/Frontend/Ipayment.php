@@ -1,7 +1,7 @@
 <?php
 /**
- * Shopware 4.0
- * Copyright © 2012 shopware AG
+ * Shopware 5
+ * Copyright (c) shopware AG
  *
  * According to our dual licensing model, this program can be used either
  * under the terms of the GNU Affero General Public License, version 3,
@@ -24,14 +24,11 @@
  * @category   Shopware
  * @package    Shopware_Plugins
  * @subpackage Plugin
- * @copyright  Copyright (c) 2012, shopware AG (http://www.shopware.de)
- * @version    $Id$
- * @author     Heiner Lohaus
- * @author     $Author$
+ * @copyright  Copyright (c) shopware AG (http://www.shopware.de)
  */
 
 /**
- * Paypal payment controller
+ * Ipayment payment controller
  */
 class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Frontend_Payment
 {
@@ -46,10 +43,10 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     }
 
     /**
-    * Index action method.
-    *
-    * Forwards to correct the action.
-    */
+     * Index action method.
+     *
+     * Forwards to correct the action.
+     */
     public function indexAction()
     {
         if ($this->getAmount() > 0 && $this->getPaymentShortName() == 'ipayment') {
@@ -70,7 +67,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
 
         $params = array(
             'trxuser_id' => $test ? '99998' : $config->get('ipaymentAppId'),
-            'trxpassword' => $test ? '0': $config->get('ipaymentAppPassword'),
+            'trxpassword' => $test ? '0' : $config->get('ipaymentAppPassword'),
             'silent' => 1,
             'trx_paymenttyp' => 'cc',
             'trx_typ' => $config->get('ipaymentPaymentPending') ? 'preauth' : 'auth',
@@ -88,8 +85,11 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         );
 
         $securityHash = array(
-            $params['trxuser_id'], $params['trx_amount'], $params['trx_currency'],
-            $params['trxpassword'], !$test ? $config->get('ipaymentSecurityKey') : 'testtest',
+            $params['trxuser_id'],
+            $params['trx_amount'],
+            $params['trx_currency'],
+            $params['trxpassword'],
+            !$test ? $config->get('ipaymentSecurityKey') : 'testtest',
         );
 
         $params['trx_securityhash'] = md5(implode('', $securityHash));
@@ -112,7 +112,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         $customer = array(
             'shopper_id' => $billing['customernumber'],
             'addr_name' => $billing['firstname'] . ' ' . $billing['lastname'],
-            'addr_street' => $billing['street'] . ' ' .$billing['streetnumber'],
+            'addr_street' => $billing['street'] . ' ' . $billing['streetnumber'],
             'addr_zip' => $billing['zipcode'],
             'addr_city' => $billing['city'],
             'addr_country' => $user['additional']['country']['countryiso'],
@@ -122,6 +122,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         if (!empty($user['additional']['stateBilling']['shortcode'])) {
             $customer['addr_state'] = $user['additional']['stateBilling']['shortcode'];
         }
+
         return $customer;
     }
 
@@ -132,21 +133,27 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     {
         $config = $this->Plugin()->Config();
         $client = $this->Client();
-        $params = array('ipayment_session_id' => $client->createSession(
-            $this->Plugin()->getAccountData(),
-            $this->getTransactionData(array(
-                //'recurringData' => array(
-                //    'recurringTyp' => 'initial',
-                //    'recurringExpiry' => date('Y/m/d', mktime(0, 0, 0, date('m'), date('d'), date('Y'))),
-                //    'recurringFrequency' => 356,
-                //    'recurringAllowExpiryCorrection' => true,
-                //)
-            )),
-            $config->get('ipaymentPaymentPending') ? 'preauth' : 'auth',
-            'cc', //paymentType
-            $this->getOptions(),
-            $this->getProcessorUrls()
-        ), 'silent' => 1);
+        $params = array(
+            'ipayment_session_id' => $client->createSession(
+                $this->Plugin()->getAccountData(),
+                $this->getTransactionData(
+                    array(
+                        //'recurringData' => array(
+                        //    'recurringTyp' => 'initial',
+                        //    'recurringExpiry' => date('Y/m/d', mktime(0, 0, 0, date('m'), date('d'), date('Y'))),
+                        //    'recurringFrequency' => 356,
+                        //    'recurringAllowExpiryCorrection' => true,
+                        //)
+                    )
+                ),
+                $config->get('ipaymentPaymentPending') ? 'preauth' : 'auth',
+                'cc', //paymentType
+                $this->getOptions(),
+                $this->getProcessorUrls()
+            ),
+            'silent' => 1
+        );
+
         return $params;
     }
 
@@ -156,14 +163,18 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
      */
     protected function getTransactionData($data = array())
     {
-        $data = array_merge(array(
-            'trxAmount' => number_format($this->getAmount(), 2, '', ''),
-            'trxCurrency' => $this->getCurrencyShortName(),
-        ), $data);
+        $data = array_merge(
+            array(
+                'trxAmount' => number_format($this->getAmount(), 2, '', ''),
+                'trxCurrency' => $this->getCurrencyShortName(),
+            ),
+            $data
+        );
         $user = $this->getUser();
         if (!empty($user['billingaddress']['customernumber'])) {
             $data['shopperId'] = $user['billingaddress']['customernumber'];
         }
+
         return $data;
     }
 
@@ -173,18 +184,21 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
      */
     protected function getOptions($options = array())
     {
-        return array_merge(array(
-            'fromIp' => $this->Request()->getClientIp(),
-            'errorLang' => Shopware()->Shop()->getLocale()->getLanguage(),
-            'browserData' => array(
-                'browserUserAgent' => $this->Request()->getHeader('user_agent'),
-                'browserAcceptHeaders' => $this->Request()->getHeader('accept'),
+        return array_merge(
+            array(
+                'fromIp' => $this->Request()->getClientIp(),
+                'errorLang' => Shopware()->Shop()->getLocale()->getLanguage(),
+                'browserData' => array(
+                    'browserUserAgent' => $this->Request()->getHeader('user_agent'),
+                    'browserAcceptHeaders' => $this->Request()->getHeader('accept'),
+                ),
+                'clientData' => array(
+                    'clientName' => 'Shopware ' . Shopware::VERSION,
+                    'clientVersion' => $this->Plugin()->getVersion(),
+                ),
             ),
-            'clientData' => array(
-                'clientName' => 'Shopware ' . Shopware::VERSION,
-                'clientVersion' => $this->Plugin()->getVersion(),
-            ),
-        ), $options);
+            $options
+        );
     }
 
     /**
@@ -193,6 +207,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     protected function getProcessorUrls()
     {
         $router = $this->Front()->Router();
+
         return array(
             'silentErrorUrl' => $router->assemble(array('action' => 'return', 'forceSecure' => true)),
             'hiddenTriggerUrl' => $router->assemble(array('action' => 'notify', 'forceSecure' => true)),
@@ -206,9 +221,8 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     public function recurringAction()
     {
         if (!$this->getAmount() || $this->getOrderNumber()) {
-            $this->redirect(array(
-                'controller' => 'checkout'
-            ));
+            $this->redirect(array('controller' => 'checkout'));
+
             return;
         }
 
@@ -223,22 +237,22 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             AND o.status >= 0
             ORDER BY o.id DESC
         ';
-        $transactionId = Shopware()->Db()->fetchOne($sql, array(
-            Shopware()->Session()->sUserId, $orderId
-        ));
+        $transactionId = Shopware()->Db()->fetchOne($sql, array(Shopware()->Session()->sUserId, $orderId));
 
         $client = $this->Client();
         $method = $config->get('ipaymentPaymentPending') ? 'rePreAuthorize' : 'reAuthorize';
         $result = $client->$method(
             $this->Plugin()->getAccountData(),
             $transactionId,
-            $this->getTransactionData(array(
-                'recurringData' => array(
-                    'recurringTyp' => 'sequencial',
-                    'recurringAllowExpiryCorrection' => true,
-                    'recurringIgnoreMissingInitial' => true
+            $this->getTransactionData(
+                array(
+                    'recurringData' => array(
+                        'recurringTyp' => 'sequencial',
+                        'recurringAllowExpiryCorrection' => true,
+                        'recurringIgnoreMissingInitial' => true
+                    )
                 )
-            )),
+            ),
             $this->getOptions()
         );
 
@@ -251,10 +265,12 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
                 );
                 $this->redirect(array('action' => 'index', 'forceSecure' => true));
             } else {
-                echo Zend_Json::encode(array(
-                    'success' => false,
-                    'message' => "[{$result->errorDetails->retErrorcode}] {$result->errorDetails->retErrorMsg}"
-                ));
+                echo Zend_Json::encode(
+                    array(
+                        'success' => false,
+                        'message' => "[{$result->errorDetails->retErrorcode}] {$result->errorDetails->retErrorMsg}"
+                    )
+                );
             }
         } else {
             $transactionId = $result->successDetails->retTrxNumber;
@@ -264,24 +280,28 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
 
             $orderNumber = $this->saveOrder($transactionId, $paymentUniqueId, $paymentStatusId);
             $comment = "{$result->paymentMethod} ({$result->trxPaymentDataCountry})";
-            $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
+            $sql = '
+                UPDATE `s_order`
+                SET `comment` = ?
+                WHERE `ordernumber` = ?
+            ';
             Shopware()->Db()->query($sql, array($comment, $orderNumber));
 
             if (!$this->Request()->isXmlHttpRequest()) {
-                $this->redirect(array(
-                    'controller' => 'checkout',
-                    'action'     => 'finish',
-                    'sUniqueID'  => $paymentUniqueId
-                ));
+                $this->redirect(
+                    array('controller' => 'checkout', 'action' => 'finish', 'sUniqueID' => $paymentUniqueId)
+                );
             } else {
-                echo Zend_Json::encode(array(
-                    'success' => true,
-                    'data' => array(
-                        'orderNumber'    => $orderNumber,
-                        'transactionId'  => $transactionId,
-                        'paymentComment' => $comment
+                echo Zend_Json::encode(
+                    array(
+                        'success' => true,
+                        'data' => array(
+                            'orderNumber' => $orderNumber,
+                            'transactionId' => $transactionId,
+                            'paymentComment' => $comment
+                        )
                     )
-                ));
+                );
             }
         }
     }
@@ -292,8 +312,8 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     public function getRecurringPayments()
     {
         $sql = '
-            SELECT o.id, MAX(o.id) as orderId,
-              a.swag_ipayment_description as description
+            SELECT o.id, MAX(o.id) AS orderId,
+              a.swag_ipayment_description AS description
             FROM s_order o, s_order_attributes a
             WHERE o.userID = ?
             AND o.status >= 0
@@ -303,9 +323,8 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             GROUP BY description
             ORDER BY o.id DESC
         ';
-        return Shopware()->Db()->fetchAll($sql, array(
-            Shopware()->Session()->sUserId
-        ));
+
+        return Shopware()->Db()->fetchAll($sql, array(Shopware()->Session()->sUserId));
     }
 
     /**
@@ -316,9 +335,8 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     public function gatewayAction()
     {
         if (!$this->getAmount() || $this->getOrderNumber()) {
-            $this->redirect(array(
-                'controller' => 'checkout'
-            ));
+            $this->redirect(array('controller' => 'checkout'));
+
             return;
         }
 
@@ -345,22 +363,23 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             $this->View()->recurringPayments = $this->getRecurringPayments();
         }
 
-        $this->View()->assign(array(
-            'gatewayUrl' => $url,
-            'gatewayParams' => $params,
-            'gatewayAmount' => $this->getAmount(),
-            'gatewaySecureImage' => $config->get('ipaymentSecureImage')
-        ));
+        $this->View()->assign(
+            array(
+                'gatewayUrl' => $url,
+                'gatewayParams' => $params,
+                'gatewayAmount' => $this->getAmount(),
+                'gatewaySecureImage' => $config->get('ipaymentSecureImage')
+            )
+        );
         if (!empty(Shopware()->Session()->IpaymentError)) {
-            if (!empty(Shopware()->Session()->IpaymentError['recurring'])
-              && !empty($this->View()->recurringPayments)) {
+            if (!empty(Shopware()->Session()->IpaymentError['recurring']) && !empty($this->View()->recurringPayments)) {
                 $this->View()->assign('recurringError', Shopware()->Session()->IpaymentError);
             } else {
                 $this->View()->assign('gatewayError', Shopware()->Session()->IpaymentError);
             }
             unset(Shopware()->Session()->IpaymentError);
         }
-	}
+    }
 
     /**
      * Return action method
@@ -370,19 +389,20 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     public function returnAction()
     {
         $request = $this->Request();
-		$config = $this->Plugin()->Config();
+        $config = $this->Plugin()->Config();
         $test = $config->get('ipaymentSandbox');
 
         $status = $this->Request()->getParam('ret_status');
         if ($status == 'ERROR') {
             $errorMessage = $request->getParam('ret_errorcode');
-            if (mb_detect_encoding($status, 'UTF-8', true) === false){
+            if (mb_detect_encoding($status, 'UTF-8', true) === false) {
                 $errorMessage = utf8_encode($errorMessage);
             }
 
             Shopware()->Session()->IpaymentError = array(
                 'errorCode' => $request->getParam('ret_errorcode'),
-                'errorMessage' => $errorMessage);
+                'errorMessage' => $errorMessage
+            );
 
             $this->redirect(array('action' => 'index', 'forceSecure' => true));
 
@@ -402,8 +422,6 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
         }
         if ($request->get('ret_url_checksum') != md5($url . $secret)) {
             $paymentStatus = 'checksum'; //Überprüfung notwendig
-            //$this->redirect(array('action' => 'index', 'forceSecure' => true));
-            //return;
         }
         $paymentStatusId = $this->Plugin()->getPaymentStatusId($paymentStatus);
         $orderNumber = $this->saveOrder($transactionId, $paymentUniqueId, $paymentStatusId);
@@ -418,7 +436,11 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
             }
             $comment .= " - {$result['paydata_cc_cardowner']}";
         }
-        $sql = 'UPDATE `s_order` SET `comment` = ? WHERE `ordernumber` = ?';
+        $sql = '
+            UPDATE `s_order`
+            SET `comment` = ?
+            WHERE `ordernumber` = ?
+        ';
         Shopware()->Db()->query($sql, array($comment . "\r\n", $orderNumber));
 
         try {
@@ -428,17 +450,11 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
                 ON DUPLICATE KEY
                 UPDATE swag_ipayment_description = VALUES(swag_ipayment_description)
             ';
-            Shopware()->Db()->query($sql, array(
-                $comment,
-                $orderNumber
-            ));
-        } catch(Exception $e){ }
+            Shopware()->Db()->query($sql, array($comment, $orderNumber));
+        } catch (Exception $e) {
+        }
 
-        $this->redirect(array(
-            'controller' => 'checkout',
-            'action' => 'finish',
-            'sUniqueID' => $paymentUniqueId
-        ));
+        $this->redirect(array('controller' => 'checkout', 'action' => 'finish', 'sUniqueID' => $paymentUniqueId));
     }
 
     /**
@@ -477,6 +493,7 @@ class Shopware_Controllers_Frontend_Ipayment extends Shopware_Controllers_Fronte
     {
         $apiUrl = 'https://ipayment.de/service/3.0/?wsdl';
         $client = new SoapClient($apiUrl, array('trace' => 1));
+
         return $client;
     }
 }
