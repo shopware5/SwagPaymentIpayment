@@ -4,14 +4,23 @@ input.cc_number {
 
 .cc_checkcode_notice {
     display: block;
-    .unitize(margin-left, 205);
+    font-size: smaller;
 }
 
 .ipayment--distance-top {
     .unitize(margin-top, 20);
 
     label {
-        .unitize-width(200);
+        .unitize-width(390);
+        display: inline-block;
+    }
+}
+
+.ipayment--distance-top-amount {
+    .unitize(margin-top, 30);
+
+    label {
+        .unitize-width(165);
         display: inline-block;
     }
 }
@@ -27,6 +36,29 @@ input.cc_number {
 .ipayment--label-select-month {
     display: block;
     .unitize(line-height, 42);
+}
+
+.ipayment--distance-top .btn.is--primary.right {
+    float: none;
+    .unitize(margin-top, 10);
+}
+
+@media screen and (min-width: @phoneLandscapeViewportWidth) {
+    .ipayment--distance-top {
+        label {
+            .unitize-width(160);
+        }
+    }
+
+    .ipayment--distance-top .btn.is--primary.right {
+        float: right;
+        .unitize(margin-top, 0);
+    }
+
+    .cc_checkcode_notice {
+        .unitize(margin-left, 165);
+        font-size: inherit;
+    }
 }
 
 @media screen and (min-width: @tabletViewportWidth) {

@@ -82,7 +82,7 @@
             <div>
                 <h2>{s name=PaymentInput}{/s}</h2>
 
-                <div class="ipayment--distance-top is--strong">
+                <div class="ipayment--distance-top-amount is--strong">
                     <label for="trx_amount">{s name=PaymentAmountLabel}{/s}</label>
                     <span id="trx_amount">{$gatewayAmount|currency}</span>
                 </div>
