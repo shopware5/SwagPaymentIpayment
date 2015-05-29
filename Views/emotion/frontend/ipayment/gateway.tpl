@@ -118,7 +118,7 @@
                     <input class="text cc_number" maxlength="4" id="cc_number4" name="cc_number4" onkeyup="checkKK(this, '');" autocomplete="off">
                 </div>
                 <div>
-                    <label for="cc_checkcode">{s name=PaymentCheckCodeLabel namespace=frontend/ipayment/gatewayl}{/s}</label>
+                    <label for="cc_checkcode">{s name=PaymentCheckCodeLabel namespace=frontend/ipayment/gateway}{/s}</label>
                     <input id="cc_checkcode" class="text cc_number" type="text" value="" maxlength="4" size="4" name="cc_checkcode">
                     <span class="cc_checkcode_notice">
                         {s name=PaymentCheckCodeNotice namespace=frontend/ipayment/gateway namespace=frontend/ipayment/gateway}{/s}
