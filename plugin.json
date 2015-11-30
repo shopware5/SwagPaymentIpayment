@@ -5,24 +5,11 @@
     },
 
     "copyright": "(c) by Shopware AG",
-    "license": "proprietary",
+    "license": "MIT",
     "link": "http://store.shopware.com",
     "author": "Shopware AG",
 
     "currentVersion": "1.2.0",
-
-    "changelog": {
-        "de": {
-            "1.2.0": "PT-3122 - Feature: Shopware 5 Kompatibilität;",
-            "1.1.2": "Behebt einen Fehler im Zusammenhang mit UTF8-encoded Response Messages;",
-            "1.1.1": "Redundanten saveOrder Aufruf entfernt;"
-        },
-        "en": {
-            "1.2.0": "PT-3122 - Feature: Shopware 5 compatibility;",
-            "1.1.2": "fixed an issue related to UTF8-encoded response messages;",
-            "1.1.1": "removed redundant saveOrder call;"
-        }
-    },
 
     "compatibility": {
         "minimumVersion": "4.1.4",

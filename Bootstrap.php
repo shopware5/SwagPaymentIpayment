@@ -1,33 +1,9 @@
 <?php
 /**
- * Shopware 4.0
- * Copyright © 2012 shopware AG
+ * (c) shopware AG <info@shopware.com>
  *
- * According to our dual licensing model, this program can be used either
- * under the terms of the GNU Affero General Public License, version 3,
- * or under a proprietary license.
- *
- * The texts of the GNU Affero General Public License with an additional
- * permission and of our proprietary license can be found at and
- * in the LICENSE file you have received along with this program.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * "Shopware" is a registered trademark of shopware AG.
- * The licensing of the program under the AGPLv3 does not imply a
- * trademark license. Therefore any rights, title and interest in
- * our trademarks remain entirely with us.
- *
- * @category   Shopware
- * @package    Shopware_Plugins
- * @subpackage Plugin
- * @copyright  Copyright (c) 2012, shopware AG (http://www.shopware.de)
- * @version    $Id$
- * @author     Heiner Lohaus
- * @author     $Author$
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 use Doctrine\Common\Collections\ArrayCollection;
 use Shopware\Components\Theme\LessDefinition;
@@ -77,6 +53,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
 
     /**
      * @param string $version
+     *
      * @return bool
      */
     public function update($version)
@@ -130,6 +107,151 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
     }
 
     /**
+     * Returns the path to a frontend controller for an event.
+     *
+     * @param Enlight_Event_EventArgs $args
+     *
+     * @return string
+     */
+    public function onGetControllerPathFrontend(Enlight_Event_EventArgs $args)
+    {
+        $this->registerMyTemplateDir();
+        $this->Application()->Loader()->registerNamespace(
+            'Shopware_Components_Ipayment',
+            $this->Path() . 'Components/Ipayment/'
+        );
+
+        return $this->Path() . 'Controllers/Frontend/Ipayment.php';
+    }
+
+    /**
+     * Provide the file collection for less
+     *
+     * @return ArrayCollection
+     */
+    public function addLessFiles()
+    {
+        $less = new LessDefinition(
+        //configuration
+            array(),
+
+            //less files to compile
+            array(__DIR__ . '/Views/responsive/frontend/_public/src/less/all.less'),
+
+            //import directory
+            __DIR__
+        );
+
+        return new ArrayCollection(array($less));
+    }
+
+    /**
+     * @param string $paymentStatus
+     *
+     * @return int
+     */
+    public function getPaymentStatusId($paymentStatus)
+    {
+        switch ($paymentStatus) {
+            case 'auth':
+                $paymentStatusId = $this->Config()->get('ipaymentStatusId', 12);
+                break;
+            case 'preauth':
+                $paymentStatusId = $this->Config()->get('ipaymentPendingStatusId', 18);
+                break; //Reserviert
+            default:
+                $paymentStatusId = 21;
+                break;
+        }
+
+        return $paymentStatusId;
+    }
+
+    /**
+     * @param string      $transactionId
+     * @param string      $paymentStatus
+     * @param string|null $note
+     */
+    public function setPaymentStatus($transactionId, $paymentStatus, $note = null)
+    {
+        $paymentStatusId = $this->getPaymentStatusId($paymentStatus);
+        $sql = '
+            SELECT id
+            FROM s_order
+            WHERE transactionID=?
+              AND status!=-1
+        ';
+        $orderId = Shopware()->Db()->fetchOne($sql, array($transactionId));
+        $order = Shopware()->Modules()->Order();
+        $order->setPaymentStatus($orderId, $paymentStatusId, false, $note);
+        if ($paymentStatusId == 12) {
+            $sql = '
+                UPDATE s_order
+                SET cleareddate=NOW()
+                WHERE transactionID=?
+                  AND cleareddate IS NULL LIMIT 1
+            ';
+            Shopware()->Db()->query($sql, array($transactionId));
+        }
+    }
+
+    public function getAccountData()
+    {
+        $config = $this->Config();
+        if ($config->get('ipaymentSandbox')) {
+            return array(
+                'accountId' => '99999',
+                'trxuserId' => '99999',
+                'trxpassword' => '0',
+                'adminactionpassword' => '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+            );
+        }
+
+        return array(
+                'accountId' => $config->get('ipaymentAccountId'),
+                'trxuserId' => $config->get('ipaymentAppId'),
+                'trxpassword' => $config->get('ipaymentAppPassword'),
+                'adminactionpassword' => $config->get('ipaymentAdminPassword'),
+            );
+    }
+
+    /**
+     * @return array
+     */
+    public function getLabel()
+    {
+        return 'iPayment';
+    }
+
+    /**
+     * Returns the version of plugin as string.
+     *
+     * @throws Exception
+     *
+     * @return string
+     */
+    public function getVersion()
+    {
+        $info = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'plugin.json'), true);
+
+        if ($info) {
+            return $info['currentVersion'];
+        }
+        throw new Exception('The plugin has an invalid version file.');
+    }
+
+    /**
+     * @return array
+     */
+    public function getInfo()
+    {
+        return array(
+            'version' => $this->getVersion(),
+            'label' => $this->getLabel(),
+        );
+    }
+
+    /**
      * Creates and subscribe the events and hooks.
      */
     protected function createMyEvents()
@@ -174,7 +296,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'ipaymentAccountId',
             array(
                 'label' => 'Account-ID',
-                'required' => true
+                'required' => true,
             )
         );
         $form->setElement(
@@ -182,7 +304,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'ipaymentAppId',
             array(
                 'label' => 'Anwendungs-ID',
-                'required' => true
+                'required' => true,
             )
         );
         $form->setElement(
@@ -190,7 +312,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'ipaymentAppPassword',
             array(
                 'label' => 'Anwendungspasswort',
-                'required' => true
+                'required' => true,
             )
         );
         $form->setElement(
@@ -199,7 +321,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             array(
                 'label' => 'Adminaktionspasswort',
                 'description' => 'Tragen Sie hier Ihr Adminaktionspasswort für sicherere und / oder wiederkehrende Zahlungen ein.',
-                'required' => false
+                'required' => false,
             )
         );
         $form->setElement(
@@ -207,14 +329,14 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'ipaymentSecurityKey',
             array(
                 'label' => 'Security-Key',
-                'required' => false
+                'required' => false,
             )
         );
         $form->setElement(
             'boolean',
             'ipaymentSandbox',
             array(
-                'label' => 'Testmodus aktivieren'
+                'label' => 'Testmodus aktivieren',
             )
         );
         $form->setElement(
@@ -231,7 +353,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             'ipaymentSecureImage',
             array(
                 'label' => '3-D Secure Bild anzeigen',
-                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP
+                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
             )
         );
 
@@ -242,7 +364,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
             array(
                 'label' => 'Zahlung reservieren?',
                 'value' => false,
-                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP
+                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
             )
         );
         $form->setElement(
@@ -254,7 +376,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
                 'store' => 'base.PaymentStatus',
                 'displayField' => 'description',
                 'valueField' => 'id',
-                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP
+                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
             )
         );
         $form->setElement(
@@ -266,7 +388,7 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
                 'store' => 'base.PaymentStatus',
                 'displayField' => 'description',
                 'valueField' => 'id',
-                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP
+                'scope' => \Shopware\Models\Config\Element::SCOPE_SHOP,
             )
         );
     }
@@ -289,9 +411,6 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
         $this->Application()->Models()->generateAttributeModels(array('s_order_attributes'));
     }
 
-    /**
-     *
-     */
     protected function registerMyTemplateDir()
     {
         if (Shopware()->Shop()->getTemplate()->getVersion() >= 3) {
@@ -299,151 +418,5 @@ class Shopware_Plugins_Frontend_SwagPaymentIpayment_Bootstrap extends Shopware_C
         } else {
             $this->Application()->Template()->addTemplateDir($this->Path() . 'Views/emotion');
         }
-
-    }
-
-    /**
-     * Returns the path to a frontend controller for an event.
-     *
-     * @param Enlight_Event_EventArgs $args
-     * @return string
-     */
-    public function onGetControllerPathFrontend(Enlight_Event_EventArgs $args)
-    {
-        $this->registerMyTemplateDir();
-        $this->Application()->Loader()->registerNamespace(
-            'Shopware_Components_Ipayment',
-            $this->Path() . 'Components/Ipayment/'
-        );
-
-        return $this->Path() . 'Controllers/Frontend/Ipayment.php';
-    }
-
-    /**
-     * Provide the file collection for less
-     *
-     * @return ArrayCollection
-     */
-    public function addLessFiles()
-    {
-        $less = new LessDefinition(
-        //configuration
-            array(),
-
-            //less files to compile
-            array(__DIR__ . '/Views/responsive/frontend/_public/src/less/all.less'),
-
-            //import directory
-            __DIR__
-        );
-
-        return new ArrayCollection(array($less));
-    }
-
-    /**
-     * @param   string $paymentStatus
-     * @return  int
-     */
-    public function getPaymentStatusId($paymentStatus)
-    {
-        switch ($paymentStatus) {
-            case 'auth':
-                $paymentStatusId = $this->Config()->get('ipaymentStatusId', 12);
-                break;
-            case 'preauth':
-                $paymentStatusId = $this->Config()->get('ipaymentPendingStatusId', 18);
-                break; //Reserviert
-            default:
-                $paymentStatusId = 21;
-                break;
-        }
-
-        return $paymentStatusId;
-    }
-
-    /**
-     * @param string $transactionId
-     * @param string $paymentStatus
-     * @param string|null $note
-     * @return void
-     */
-    public function setPaymentStatus($transactionId, $paymentStatus, $note = null)
-    {
-        $paymentStatusId = $this->getPaymentStatusId($paymentStatus);
-        $sql = '
-            SELECT id
-            FROM s_order
-            WHERE transactionID=?
-              AND status!=-1
-        ';
-        $orderId = Shopware()->Db()->fetchOne($sql, array($transactionId));
-        $order = Shopware()->Modules()->Order();
-        $order->setPaymentStatus($orderId, $paymentStatusId, false, $note);
-        if ($paymentStatusId == 12) {
-            $sql = '
-                UPDATE s_order
-                SET cleareddate=NOW()
-                WHERE transactionID=?
-                  AND cleareddate IS NULL LIMIT 1
-            ';
-            Shopware()->Db()->query($sql, array($transactionId));
-        }
-    }
-
-    public function getAccountData()
-    {
-        $config = $this->Config();
-        if ($config->get('ipaymentSandbox')) {
-            return array(
-                'accountId' => '99999',
-                'trxuserId' => '99999',
-                'trxpassword' => '0',
-                'adminactionpassword' => '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
-            );
-        } else {
-            return array(
-                'accountId' => $config->get('ipaymentAccountId'),
-                'trxuserId' => $config->get('ipaymentAppId'),
-                'trxpassword' => $config->get('ipaymentAppPassword'),
-                'adminactionpassword' => $config->get('ipaymentAdminPassword'),
-            );
-        }
-    }
-
-    /**
-     *
-     * @return array
-     */
-    public function getLabel()
-    {
-        return 'iPayment';
-    }
-
-    /**
-     * Returns the version of plugin as string.
-     *
-     * @return string
-     * @throws Exception
-     */
-    public function getVersion()
-    {
-        $info = json_decode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'plugin.json'), true);
-
-        if ($info) {
-            return $info['currentVersion'];
-        } else {
-            throw new Exception('The plugin has an invalid version file.');
-        }
-    }
-
-    /**
-     * @return array
-     */
-    public function getInfo()
-    {
-        return array(
-            'version' => $this->getVersion(),
-            'label' => $this->getLabel()
-        );
     }
 }
